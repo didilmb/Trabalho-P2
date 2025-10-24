@@ -28,7 +28,7 @@ def configurar_gemini():
 MODELO_GEMINI = 'gemini-2.5-flash'
 
 
-# --- 2. LÓGICA DE NEGÓCIO (Tabela OAB/RJ - Mantenha Atualizada!) ---
+# --- 2. LÓGICA DE NEGÓCIO (Tabela OAB/RJ - Manter Atualizada!) ---
 
 def obter_valor_minimo_oabrj(tipo_acao, valor_causa):
     """
@@ -36,7 +36,7 @@ def obter_valor_minimo_oabrj(tipo_acao, valor_causa):
     baseado em valores ILUSTRATIVOS da Tabela de Honorários Mínimos da OAB/RJ.
     """
     
-    # ATENÇÃO: SUBSTITUA ESTES VALORES ILUSTRATIVOS PELOS VALORES ATUAIS DA TABELA OAB/RJ.
+    # VALORES TABELA OAB
     Tabela_Pisos_OABRJ = {
         "Cível Comum (Conhecimento)": 6500.00,
         "Família (Divórcio Consensual)": 4000.00,
