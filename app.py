@@ -28,7 +28,7 @@ def configurar_gemini():
 MODELO_GEMINI = 'gemini-2.5-flash'
 
 
-# --- 2. LÓGICA DE NEGÓCIO (Tabela OAB/RJ - Manter Atualizada!) ---
+# --- 2. LÓGICA DE NEGÓCIO (Tabela OAB/RJ - Mantenha Atualizada!) ---
 
 def obter_valor_minimo_oabrj(tipo_acao, valor_causa):
     """
@@ -36,12 +36,16 @@ def obter_valor_minimo_oabrj(tipo_acao, valor_causa):
     baseado em valores ILUSTRATIVOS da Tabela de Honorários Mínimos da OAB/RJ.
     """
     
-    # VALORES TABELA OAB
+    # NOVOS VALORES ILUSTRATIVOS (VERIFIQUE A TABELA OFICIAL DA OAB/RJ)
     Tabela_Pisos_OABRJ = {
         "Cível Comum (Conhecimento)": 6500.00,
         "Família (Divórcio Consensual)": 4000.00,
         "Trabalhista (Reclamante)": 3000.00,
         "Previdenciário (Administrativo)": 2500.00,
+        "Imobiliário (Ações Possessórias/Reais)": 7000.00,  # NOVO
+        "Criminal (Defesa em Rito Sumário)": 5000.00,         # NOVO
+        "Tributário (Judicial/Execução Fiscal)": 8000.00,    # NOVO
+        "Empresarial (Elaboração de Contrato Social)": 4500.00, # NOVO
         "Outro": 3000.00
     }
     
@@ -124,7 +128,7 @@ JUSTIFICATIVA: [Texto conciso e profissional em português, explicando a sugest�
                             valores[chave.strip()] = valor_numerico
                         
                     except ValueError:
-                        # CORREÇÃO FINAL: Usando sintaxe de print robusta (vírgula)
+                        # Usando sintaxe de print robusta (vírgula) para evitar erros de f-string
                         print("Erro de conversão de valor na linha:", linha) 
                         continue
         
@@ -212,10 +216,20 @@ with col1:
     valor_causa_input = st.number_input("Valor da Causa (R$):", min_value=100.00, value=10000.00, step=1000.00)
     
 with col2:
+    # SELEÇÃO COM MAIS OPÇÕES DE CAUSA
     tipo_acao = st.selectbox(
         "Tipo de Ação (Ref. OAB/RJ):",
-        ["Cível Comum (Conhecimento)", "Família (Divórcio Consensual)", 
-         "Trabalhista (Reclamante)", "Previdenciário (Administrativo)", "Outro"]
+        [
+            "Cível Comum (Conhecimento)", 
+            "Família (Divórcio Consensual)", 
+            "Trabalhista (Reclamante)", 
+            "Previdenciário (Administrativo)",
+            "Imobiliário (Ações Possessórias/Reais)", # NOVO
+            "Criminal (Defesa em Rito Sumário)",      # NOVO
+            "Tributário (Judicial/Execução Fiscal)", # NOVO
+            "Empresarial (Elaboração de Contrato Social)",# NOVO
+            "Outro"
+        ]
     )
 
 complexidade = st.select_slider(
@@ -258,24 +272,3 @@ if st.button("Calcular Honorários com IA", type="primary"):
             def formatar_valor(valor):
                 # Função auxiliar de formatação para Real (BRL)
                 return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if valor is not None else "N/A"
-
-            col_min.metric("Mínimo Sugerido", formatar_valor(resultados.get('minimo')), 
-                           f"Piso OAB/RJ: {formatar_valor(resultados.get('piso_oabrj'))}")
-            col_medio.metric("Médio Sugerido", formatar_valor(resultados.get('medio')), 
-                             f"Base 20%: {formatar_valor(resultados.get('base'))}")
-            col_max.metric("Máximo Sugerido", formatar_valor(resultados.get('maximo')))
-
-            st.markdown("### 📊 Relatório Visual")
-            
-            # Geração do Gráfico
-            fig = gerar_grafico(resultados)
-            if isinstance(fig, str):
-                st.warning(fig)
-            else:
-                st.pyplot(fig)
-            
-            st.markdown("### 🤖 Justificativa da Inteligência Artificial (Gemini)")
-            st.info(resultados['justificativa'])
-
-st.markdown("---")
-st.caption("Projeto desenvolvido para fins educacionais. Os valores da Tabela OAB/RJ são ilustrativos e devem ser confirmados com a versão atualizada da seccional.")
