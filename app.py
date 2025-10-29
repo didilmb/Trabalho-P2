@@ -42,10 +42,10 @@ def obter_valor_minimo_oabrj(tipo_acao, valor_causa):
         "Família (Divórcio Consensual)": 4000.00,
         "Trabalhista (Reclamante)": 3000.00,
         "Previdenciário (Administrativo)": 2500.00,
-        "Imobiliário (Ações Possessórias/Reais)": 7000.00,  # NOVO
-        "Criminal (Defesa em Rito Sumário)": 5000.00,         # NOVO
-        "Tributário (Judicial/Execução Fiscal)": 8000.00,    # NOVO
-        "Empresarial (Elaboração de Contrato Social)": 4500.00, # NOVO
+        "Imobiliário (Ações Possessórias/Reais)": 7000.00,  
+        "Criminal (Defesa em Rito Sumário)": 5000.00,         
+        "Tributário (Judicial/Execução Fiscal)": 8000.00,    
+        "Empresarial (Elaboração de Contrato Social)": 4500.00,
         "Outro": 3000.00
     }
     
@@ -90,9 +90,9 @@ SUGESTÃO DA IA:
 - O valor Máximo deve representar o limite superior para um caso de sucesso e alta demanda.
 
 A resposta deve ser formatada **EXATAMENTE** desta forma, usando o delimitador '---' para separar valores e justificativa:
-MINIMO: [Valor em reais, sem R$ e com ponto como separador decimal. Ex: 6500.00]
-MEDIO: [Valor em reais, sem R$ e com ponto como separador decimal]
-MAXIMO: [Valor em reais, sem R$ e com ponto como separador decimal]
+MINIMO: [Valor em reais, com ponto como separador decimal. Ex: 6500.00]
+MEDIO: [Valor em reais, com ponto como separador decimal]
+MAXIMO: [Valor em reais, com ponto como separador decimal]
 ---
 JUSTIFICATIVA: [Texto conciso e profissional em português, explicando a sugestão com base na complexidade e nas referências da OAB/RJ.]
 """
@@ -117,19 +117,26 @@ JUSTIFICATIVA: [Texto conciso e profissional em português, explicando a sugest�
         if len(partes) > 0:
             for linha in partes[0].strip().split('\n'):
                 if ":" in linha:
-                    chave, valor_str = linha.split(":")
                     try:
-                        valor_str_limpo = valor_str.strip().replace("R$", "").replace(",", "").replace(" ", "")
-                        if valor_str_limpo.endswith('.'):
-                            valor_str_limpo = valor_str_limpo[:-1]
-                            
-                        if valor_str_limpo:
-                            valor_numerico = float(valor_str_limpo) 
-                            valores[chave.strip()] = valor_numerico
+                        chave, valor_str = linha.split(":")
+                        chave_limpa = chave.strip()
                         
+                        # Limpa a string de valor, removendo R$ e espaços, mantendo apenas o ponto para o float
+                        # CORREÇÃO DE ROBUSTEZ APLICADA AQUI
+                        valor_para_float = valor_str.strip().replace("R$", "").replace(" ", "")
+                        
+                        # Tenta converter para float diretamente
+                        valor_numerico = float(valor_para_float)
+
+                        if valor_numerico >= 0:
+                            valores[chave_limpa] = valor_numerico
+                            
                     except ValueError:
-                        # Usando sintaxe de print robusta (vírgula) para evitar erros de f-string
-                        print("Erro de conversão de valor na linha:", linha) 
+                        # Se a conversão falhar, logamos o erro, mas o resto do código continua
+                        print(f"Erro de conversão de valor na linha: {linha}. O valor não era um número float válido.") 
+                        continue
+                    except Exception as e:
+                        print(f"Erro inesperado ao processar a linha {linha}: {e}")
                         continue
         
         justificativa = partes[1].replace("JUSTIFICATIVA:", "").strip() if len(partes) > 1 else "Não foi possível gerar a justificativa da IA."
@@ -167,6 +174,7 @@ def gerar_grafico(resultados):
     titulos = ['Piso OAB/RJ', 'Sugestão Mínima', 'Sugestão Média', 'Sugestão Máxima']
     cores = ['#D9534F', '#F0AD4E', '#5CB85C', '#5BC0DE']
     
+    # Filtra None values
     dados_grafico = [(t, v, c) for t, v, c in zip(titulos, valores, cores) if v is not None]
     
     if not dados_grafico:
@@ -224,10 +232,10 @@ with col2:
             "Família (Divórcio Consensual)", 
             "Trabalhista (Reclamante)", 
             "Previdenciário (Administrativo)",
-            "Imobiliário (Ações Possessórias/Reais)", # NOVO
-            "Criminal (Defesa em Rito Sumário)",      # NOVO
-            "Tributário (Judicial/Execução Fiscal)", # NOVO
-            "Empresarial (Elaboração de Contrato Social)",# NOVO
+            "Imobiliário (Ações Possessórias/Reais)",
+            "Criminal (Defesa em Rito Sumário)",      
+            "Tributário (Judicial/Execução Fiscal)", 
+            "Empresarial (Elaboração de Contrato Social)",
             "Outro"
         ]
     )
@@ -272,3 +280,29 @@ if st.button("Calcular Honorários com IA", type="primary"):
             def formatar_valor(valor):
                 # Função auxiliar de formatação para Real (BRL)
                 return f"R$ {valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if valor is not None else "N/A"
+            
+            # Verifica se os valores são válidos antes de exibir, para evitar erros
+            min_val = resultados.get('minimo')
+            med_val = resultados.get('medio')
+            max_val = resultados.get('maximo')
+
+            col_min.metric("Mínimo Sugerido", formatar_valor(min_val), 
+                           f"Piso OAB/RJ: {formatar_valor(resultados.get('piso_oabrj'))}")
+            col_medio.metric("Médio Sugerido", formatar_valor(med_val), 
+                             f"Base 20%: {formatar_valor(resultados.get('base'))}")
+            col_max.metric("Máximo Sugerido", formatar_valor(max_val))
+
+            st.markdown("### 📊 Relatório Visual")
+            
+            # Geração do Gráfico
+            fig = gerar_grafico(resultados)
+            if isinstance(fig, str):
+                st.warning(fig)
+            else:
+                st.pyplot(fig)
+            
+            st.markdown("### 🤖 Justificativa da Inteligência Artificial (Gemini)")
+            st.info(resultados['justificativa'])
+
+st.markdown("---")
+st.caption("Projeto desenvolvido para fins educacionais. Os valores da Tabela OAB/RJ são **ilustrativos** e devem ser **confirmados** com a versão atualizada da seccional.")
